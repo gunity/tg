@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -26,7 +27,11 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 	}
 
 	if existingCustomer == nil {
-		existingCustomer, err = h.customerRepository.Create(ctxWithTime, &database.Customer{
+		trial, err := h.paymentService.ActivateTrial(ctx, update.Message.Chat.ID)
+		if err != nil {
+			slog.Error("error activating trial", err)
+		}
+		existingCustomer, err = h.customerRepository.Create(ctxWithTime, trial, &database.Customer{
 			TelegramID: update.Message.Chat.ID,
 			Language:   langCode,
 		})
@@ -34,6 +39,13 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 			slog.Error("error creating customer", err)
 			return
 		}
+
+		//_, err := h.paymentService.ActivateTrial(ctx, update.Message.Chat.ID)
+		//if err != nil {
+		//	slog.Error("error activating customer", err)
+		//	return
+		//}
+		//slog.Info("trial activated")
 
 		if strings.Contains(update.Message.Text, "ref_") {
 			arg := strings.Split(update.Message.Text, " ")[1]
@@ -67,11 +79,18 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 		}
 	}
 
+	//existingCustomer1, err := h.customerRepository.FindByTelegramId(ctx, update.Message.Chat.ID)
+	//if err != nil {
+	//	slog.Error("error finding customer by telegram id", err)
+	//	return
+	//}
+	//slog.Info("customer updated")
+
 	inlineKeyboard := h.buildStartKeyboard(existingCustomer, langCode)
 
 	m, err := b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
-		Text:   "🧹",
+		Text:   h.translation.GetText(langCode, "loading"),
 		ReplyMarkup: models.ReplyKeyboardRemove{
 			RemoveKeyboard: true,
 		},
@@ -92,13 +111,17 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 		return
 	}
 
+	formattedDate := existingCustomer.ExpireAt.Format("02.01.2006 15:04")
+	subscriptionActiveText := h.translation.GetText(langCode, "subscription_active")
+	sprintf := fmt.Sprintf(subscriptionActiveText, formattedDate)
+
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:    update.Message.Chat.ID,
 		ParseMode: models.ParseModeHTML,
 		ReplyMarkup: models.InlineKeyboardMarkup{
 			InlineKeyboard: inlineKeyboard,
 		},
-		Text: h.translation.GetText(langCode, "greeting"),
+		Text: h.translation.GetText(langCode, "greeting") + sprintf,
 	})
 	if err != nil {
 		slog.Error("Error sending /start message", err)
@@ -154,14 +177,17 @@ func (h Handler) resolveConnectButton(lang string) []models.InlineKeyboardButton
 func (h Handler) buildStartKeyboard(existingCustomer *database.Customer, langCode string) [][]models.InlineKeyboardButton {
 	var inlineKeyboard [][]models.InlineKeyboardButton
 
-	if existingCustomer.SubscriptionLink == nil && config.TrialDays() > 0 {
-		inlineKeyboard = append(inlineKeyboard, []models.InlineKeyboardButton{{Text: h.translation.GetText(langCode, "trial_button"), CallbackData: CallbackTrial}})
-	}
+	//if existingCustomer.SubscriptionLink == nil && config.TrialDays() > 0 {
+	//	inlineKeyboard = append(inlineKeyboard, []models.InlineKeyboardButton{{Text: h.translation.GetText(langCode, "trial_button"), CallbackData: CallbackTrial}})
+	//}
 
 	inlineKeyboard = append(inlineKeyboard, [][]models.InlineKeyboardButton{{{Text: h.translation.GetText(langCode, "buy_button"), CallbackData: CallbackBuy}}}...)
 
 	if existingCustomer.SubscriptionLink != nil && existingCustomer.ExpireAt.After(time.Now()) {
-		inlineKeyboard = append(inlineKeyboard, h.resolveConnectButton(langCode))
+		//inlineKeyboard = append(inlineKeyboard, h.resolveConnectButton(langCode))
+		//url := config.SupportURL()
+		url := *existingCustomer.SubscriptionLink
+		inlineKeyboard = append(inlineKeyboard, []models.InlineKeyboardButton{{Text: h.translation.GetText(langCode, "connect_button"), URL: url}})
 	}
 
 	if config.GetReferralDays() > 0 {

@@ -8,6 +8,11 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log/slog"
+	//"remnawave-tg-shop-bot/internal/config"
+	//"remnawave-tg-shop-bot/internal/payment"
+
+	//"remnawave-tg-shop-bot/internal/config"
+	//"remnawave-tg-shop-bot/internal/payment"
 	"remnawave-tg-shop-bot/utils"
 	"time"
 )
@@ -136,11 +141,12 @@ func (cr *CustomerRepository) FindByTelegramId(ctx context.Context, telegramId i
 	return &customer, nil
 }
 
-func (cr *CustomerRepository) Create(ctx context.Context, customer *Customer) (*Customer, error) {
+// func (cr *CustomerRepository) Create(ctx context.Context, service *payment.PaymentService, customer *Customer) (*Customer, error) {
+func (cr *CustomerRepository) Create(ctx context.Context, link string, customer *Customer) (*Customer, error) {
 	buildInsert := sq.Insert("customer").
-		Columns("telegram_id", "expire_at", "language").
+		Columns("telegram_id", "expire_at", "language", "subscription_link").
 		PlaceholderFormat(sq.Dollar).
-		Values(customer.TelegramID, customer.ExpireAt, customer.Language).
+		Values(customer.TelegramID, time.Now().AddDate(0, 0, 7), customer.Language, link).
 		Suffix("RETURNING id, created_at")
 	sqlStr, args, err := buildInsert.ToSql()
 	if err != nil {
@@ -157,6 +163,17 @@ func (cr *CustomerRepository) Create(ctx context.Context, customer *Customer) (*
 	customer.CreatedAt = createdAt
 
 	slog.Info("user created in bot database", "telegramId", utils.MaskHalfInt64(customer.TelegramID))
+
+	//subLink, err1 := service.ActivateTrial(ctx, customer.TelegramID)
+	//if err1 != nil {
+	//	return nil, fmt.Errorf("failed to build insert query: %w", err1)
+	//}
+	//date := time.Now().AddDate(0, 0, config.TrialDays())
+	//customer.ExpireAt = &date
+	//customer.SubscriptionLink = &subLink
+	//
+	//slog.Info("user trial is activated", "telegramId", utils.MaskHalfInt64(customer.TelegramID))
+
 	return customer, nil
 }
 

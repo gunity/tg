@@ -114,12 +114,24 @@ func (h Handler) SellCallbackHandler(ctx context.Context, b *bot.Bot, update *mo
 		{Text: h.translation.GetText(langCode, "back_button"), CallbackData: CallbackBuy},
 	})
 
-	_, err := b.EditMessageReplyMarkup(ctx, &bot.EditMessageReplyMarkupParams{
+	//_, err := b.EditMessageReplyMarkup(ctx, &bot.EditMessageReplyMarkupParams{
+	//	ChatID:    callback.Chat.ID,
+	//	MessageID: callback.ID,
+	//	ReplyMarkup: models.InlineKeyboardMarkup{
+	//		InlineKeyboard: keyboard,
+	//	},
+	//})
+
+	_, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:    callback.Chat.ID,
 		MessageID: callback.ID,
+		ParseMode: models.ParseModeHTML,
 		ReplyMarkup: models.InlineKeyboardMarkup{
 			InlineKeyboard: keyboard,
 		},
+		Text: h.translation.GetText(langCode, "pricing_info") +
+			fmt.Sprintf(h.translation.GetText(langCode, "months"), month) +
+			h.translation.GetText(langCode, "pay_type"),
 	})
 
 	if err != nil {
@@ -166,9 +178,10 @@ func (h Handler) PaymentCallbackHandler(ctx context.Context, b *bot.Bot, update 
 
 	langCode := update.CallbackQuery.From.LanguageCode
 
-	message, err := b.EditMessageReplyMarkup(ctx, &bot.EditMessageReplyMarkupParams{
+	message, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:    callback.Chat.ID,
 		MessageID: callback.ID,
+		ParseMode: models.ParseModeHTML,
 		ReplyMarkup: models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
@@ -177,7 +190,25 @@ func (h Handler) PaymentCallbackHandler(ctx context.Context, b *bot.Bot, update 
 				},
 			},
 		},
+		Text: h.translation.GetText(langCode, "pricing_info") +
+			fmt.Sprintf(h.translation.GetText(langCode, "months_d"), month) +
+			h.translation.GetText(langCode, "pay_type") +
+			"Telegram Stars" +
+			fmt.Sprintf(h.translation.GetText(langCode, "cost"), price),
 	})
+
+	//message, err := b.EditMessageReplyMarkup(ctx, &bot.EditMessageReplyMarkupParams{
+	//	ChatID:    callback.Chat.ID,
+	//	MessageID: callback.ID,
+	//	ReplyMarkup: models.InlineKeyboardMarkup{
+	//		InlineKeyboard: [][]models.InlineKeyboardButton{
+	//			{
+	//				{Text: h.translation.GetText(langCode, "pay_button"), URL: paymentURL},
+	//				{Text: h.translation.GetText(langCode, "back_button"), CallbackData: fmt.Sprintf("%s?month=%d&amount=%d", CallbackSell, month, price)},
+	//			},
+	//		},
+	//	},
+	//})
 	if err != nil {
 		slog.Error("Error updating sell message", err)
 		return

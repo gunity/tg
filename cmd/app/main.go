@@ -150,6 +150,7 @@ func main() {
 	}()
 
 	slog.Info("Bot is starting...")
+	slog.Info("test")
 	b.Start(ctx)
 
 	log.Println("Shutting down health server…")

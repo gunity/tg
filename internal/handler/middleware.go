@@ -27,8 +27,13 @@ func (h Handler) CreateCustomerIfNotExistMiddleware(next bot.HandlerFunc) bot.Ha
 			return
 		}
 
+		trial, err := h.paymentService.ActivateTrial(ctx, telegramId)
+		if err != nil {
+			slog.Error("error activating trial", err)
+		}
+
 		if existingCustomer == nil {
-			existingCustomer, err = h.customerRepository.Create(ctx, &database.Customer{
+			existingCustomer, err = h.customerRepository.Create(ctx, trial, &database.Customer{
 				TelegramID: telegramId,
 				Language:   langCode,
 			})
