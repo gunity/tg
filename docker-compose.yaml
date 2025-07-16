@@ -1,6 +1,11 @@
 services:
   bot:
-    image: ghcr.io/jolymmiels/remnawave-telegram-shop-bot:latest
+#    image: ghcr.io/jolymmiels/remnawave-telegram-shop-bot:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: remnawave-telegram-shop-bot:latest
+    container_name: 'remnawave-telegram-shop-bot'
     env_file:
       - .env
     depends_on:
@@ -30,6 +35,11 @@ services:
       interval: 3s
       timeout: 10s
       retries: 3
+
+networks:
+  default:
+    external: true
+    name: remnawave-network
 
 #  ngrok:
 #    image: ngrok/ngrok:latest
