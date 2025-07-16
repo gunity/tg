@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -158,14 +159,9 @@ func (h Handler) resolveConnectButton(lang string) []models.InlineKeyboardButton
 func (h Handler) buildStartKeyboard(existingCustomer *database.Customer, langCode string) [][]models.InlineKeyboardButton {
 	var inlineKeyboard [][]models.InlineKeyboardButton
 
-	//if existingCustomer.SubscriptionLink == nil && config.TrialDays() > 0 {
-	//	inlineKeyboard = append(inlineKeyboard, []models.InlineKeyboardButton{{Text: h.translation.GetText(langCode, "trial_button"), CallbackData: CallbackTrial}})
-	//}
-
 	inlineKeyboard = append(inlineKeyboard, [][]models.InlineKeyboardButton{{{Text: h.translation.GetText(langCode, "buy_button"), CallbackData: CallbackBuy}}}...)
 
 	if existingCustomer.SubscriptionLink != nil && existingCustomer.ExpireAt.After(time.Now()) {
-		//inlineKeyboard = append(inlineKeyboard, h.resolveConnectButton(langCode))
 		url := *existingCustomer.SubscriptionLink
 		inlineKeyboard = append(inlineKeyboard, []models.InlineKeyboardButton{{Text: h.translation.GetText(langCode, "connect_button"), URL: url}})
 	}
