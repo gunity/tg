@@ -35,6 +35,15 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 			slog.Error("error creating customer", err)
 			return
 		}
+		trial, err := h.paymentService.ActivateTrial(ctx, update.Message.Chat.ID)
+		if err != nil {
+			slog.Error("error activating trial", err)
+		}
+		existingCustomer.SubscriptionLink = &trial
+		slog.Info("trial link %s", trial)
+		expireAt := time.Now().AddDate(0, 0, config.TrialDays())
+		existingCustomer.ExpireAt = &expireAt
+		slog.Info("expired at %s", expireAt)
 
 		if strings.Contains(update.Message.Text, "ref_") {
 			arg := strings.Split(update.Message.Text, " ")[1]
