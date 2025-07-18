@@ -1,6 +1,5 @@
 {
-  "greeting": "👋🏻 Привет!</b>️\n\nДоступные локации:\n\uD83C\uDDE9\uD83C\uDDEA Германия\n\uD83C\uDDF3\uD83C\uDDF1 Нидерланды\n\uD83C\uDDF7\uD83C\uDDFA Россия\n\uD83C\uDDEB\uD83C\uDDEE Финляндия",
-  "description": "",
+  "greeting": "👋🏻 Привет! Это <b>obbsu VPN!</b>️\n\nДоступные локации:\n\uD83C\uDDE9\uD83C\uDDEA Германия\n\uD83C\uDDF3\uD83C\uDDF1 Нидерланды\n\uD83C\uDDF7\uD83C\uDDFA Россия\n\n",
   "buy_button": "\uD83D\uDD04 Продлить подписку",
   "connect_button": "\uD83D\uDFE2 Подключиться",
   "back_button": "◀\uFE0F Назад",
