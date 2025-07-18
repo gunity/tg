@@ -40,10 +40,8 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 			slog.Error("error activating trial", err)
 		}
 		existingCustomer.SubscriptionLink = &trial
-		slog.Info("trial link %s", trial)
 		expireAt := time.Now().AddDate(0, 0, config.TrialDays())
 		existingCustomer.ExpireAt = &expireAt
-		slog.Info("expired at %s", expireAt)
 
 		if strings.Contains(update.Message.Text, "ref_") {
 			arg := strings.Split(update.Message.Text, " ")[1]
@@ -171,7 +169,7 @@ func (h Handler) buildStartKeyboard(existingCustomer *database.Customer, langCod
 	inlineKeyboard = append(inlineKeyboard, [][]models.InlineKeyboardButton{{{Text: h.translation.GetText(langCode, "buy_button"), CallbackData: CallbackBuy}}}...)
 
 	if existingCustomer.SubscriptionLink != nil && existingCustomer.ExpireAt.After(time.Now()) {
-		url := *existingCustomer.SubscriptionLink
+		url := "https://t.me/obbsu_bot/obbsu"
 		inlineKeyboard = append(inlineKeyboard, []models.InlineKeyboardButton{{Text: h.translation.GetText(langCode, "connect_button"), URL: url}})
 	}
 
