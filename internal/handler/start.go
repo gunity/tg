@@ -103,7 +103,6 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 	}
 
 	active := existingCustomer.ExpireAt != nil && existingCustomer.ExpireAt.After(time.Now())
-
 	text := h.translation.GetText(langCode, "greeting") + "\n"
 	if newUser {
 		text += h.translation.GetText(langCode, "new_user") + "\n\n"
@@ -153,6 +152,28 @@ func (h Handler) StartCallbackHandler(ctx context.Context, b *bot.Bot, update *m
 
 	inlineKeyboard := h.buildStartKeyboard(existingCustomer, langCode)
 
+	active := existingCustomer.ExpireAt != nil && existingCustomer.ExpireAt.After(time.Now())
+	text := h.translation.GetText(langCode, "greeting") + "\n"
+	//if newUser {
+	//	text += h.translation.GetText(langCode, "new_user") + "\n\n"
+	//}
+	if active {
+		loc, err := time.LoadLocation("Europe/Moscow")
+		if err != nil {
+			slog.Error("error loading timezone", err)
+		} else {
+			expireMoscow := existingCustomer.ExpireAt.In(loc).Format("02.01.2006 15:04")
+			subscriptionActiveText := h.translation.GetText(langCode, "subscription_active")
+			dateText := fmt.Sprintf(subscriptionActiveText, expireMoscow)
+
+			text += dateText + "\n\n"
+			text += h.translation.GetText(langCode, "instruction_active")
+		}
+	} else {
+		text += h.translation.GetText(langCode, "subscription_unactive") + "\n\n"
+		text += h.translation.GetText(langCode, "instruction_unactive")
+	}
+
 	_, err = b.EditMessageText(ctxWithTime, &bot.EditMessageTextParams{
 		ChatID:    callback.Message.Message.Chat.ID,
 		MessageID: callback.Message.Message.ID,
@@ -160,7 +181,7 @@ func (h Handler) StartCallbackHandler(ctx context.Context, b *bot.Bot, update *m
 		ReplyMarkup: models.InlineKeyboardMarkup{
 			InlineKeyboard: inlineKeyboard,
 		},
-		Text: h.translation.GetText(langCode, "greeting"),
+		Text: text,
 	})
 	if err != nil {
 		slog.Error("Error sending /start message", err)
