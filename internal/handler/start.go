@@ -26,7 +26,9 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 		return
 	}
 
-	if existingCustomer == nil {
+	newUser := existingCustomer == nil
+
+	if newUser {
 		existingCustomer, err = h.customerRepository.Create(ctxWithTime, &database.Customer{
 			TelegramID: update.Message.Chat.ID,
 			Language:   langCode,
@@ -100,9 +102,28 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 		return
 	}
 
-	formattedDate := existingCustomer.ExpireAt.Format("02.01.2006 15:04")
-	subscriptionActiveText := h.translation.GetText(langCode, "subscription_active")
-	sprintf := fmt.Sprintf(subscriptionActiveText, formattedDate)
+	active := existingCustomer.ExpireAt != nil && existingCustomer.ExpireAt.After(time.Now())
+
+	text := h.translation.GetText(langCode, "greeting") + "\n"
+	if newUser {
+		text += h.translation.GetText(langCode, "new_user") + "\n\n"
+	}
+	if active {
+		loc, err := time.LoadLocation("Europe/Moscow")
+		if err != nil {
+			slog.Error("error loading timezone", err)
+		} else {
+			expireMoscow := existingCustomer.ExpireAt.In(loc).Format("02.01.2006 15:04")
+			subscriptionActiveText := h.translation.GetText(langCode, "subscription_active")
+			dateText := fmt.Sprintf(subscriptionActiveText, expireMoscow)
+
+			text += dateText + "\n\n"
+			text += h.translation.GetText(langCode, "instruction_active")
+		}
+	} else {
+		text += h.translation.GetText(langCode, "subscription_unactive") + "\n\n"
+		text += h.translation.GetText(langCode, "instruction_unactive")
+	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:    update.Message.Chat.ID,
@@ -110,7 +131,7 @@ func (h Handler) StartCommandHandler(ctx context.Context, b *bot.Bot, update *mo
 		ReplyMarkup: models.InlineKeyboardMarkup{
 			InlineKeyboard: inlineKeyboard,
 		},
-		Text: h.translation.GetText(langCode, "greeting") + sprintf,
+		Text: text,
 	})
 	if err != nil {
 		slog.Error("Error sending /start message", err)
