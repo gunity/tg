@@ -44,5 +44,7 @@
   "share_referral_button": "Пригласить!",
   "web_app_button_text": "\uD83D\uDFE2 Подключиться",
   "tribute_button" : "Tribute",
-  "loading" : "Загрузка..."
+  "loading" : "Загрузка...",
+  "payment_telegram": "Telegram Stars",
+  "payment_card": "Картой банка"
 }

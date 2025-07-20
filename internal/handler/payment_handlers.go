@@ -142,11 +142,16 @@ func (h Handler) PaymentCallbackHandler(ctx context.Context, b *bot.Bot, update 
 
 	invoiceType := database.InvoiceType(callbackQuery["invoiceType"])
 
+	langCode := update.CallbackQuery.From.LanguageCode
+
 	var price int
+	var paymentType string
 	if invoiceType == database.InvoiceTypeTelegram {
 		price = config.StarsPrice(month)
+		paymentType = h.translation.GetText(langCode, "payment_telegram")
 	} else {
 		price = config.Price(month)
+		paymentType = h.translation.GetText(langCode, "payment_card")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -168,8 +173,6 @@ func (h Handler) PaymentCallbackHandler(ctx context.Context, b *bot.Bot, update 
 		return
 	}
 
-	langCode := update.CallbackQuery.From.LanguageCode
-
 	message, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:    callback.Chat.ID,
 		MessageID: callback.ID,
@@ -185,7 +188,7 @@ func (h Handler) PaymentCallbackHandler(ctx context.Context, b *bot.Bot, update 
 		Text: h.translation.GetText(langCode, "pricing_info") +
 			fmt.Sprintf(h.translation.GetText(langCode, "months_d"), month) +
 			h.translation.GetText(langCode, "pay_type") +
-			"Telegram Stars" +
+			paymentType +
 			fmt.Sprintf(h.translation.GetText(langCode, "cost"), price),
 	})
 
